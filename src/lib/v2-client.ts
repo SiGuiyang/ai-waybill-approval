@@ -139,7 +139,7 @@ export async function validateAndGetWaybill(waybillNo: string) {
 
 // 2. 校验 SKU 是否归属于指定运单
 export async function validateSkuForWaybill(waybillNo: string, sku: string) {
-  return v2RequestWithRetry<any>(`/api/waybills/${waybillNo}/sku/${sku}/validate`);
+  return v2RequestWithRetry<any>(`/api/open/waybills/${waybillNo}/sku/${sku}`);
 }
 
 // 3. 按条件查询/同步运单列表
@@ -158,7 +158,7 @@ export async function syncWaybillList(params?: {
 
 // 4. 回写运单异常状态标记（可选加分项）
 export async function notifyWaybillException(waybillNo: string, ticketId: string) {
-  return v2RequestWithRetry<any>(`/api/waybills/${waybillNo}/exception-notify`, {
+  return v2RequestWithRetry<any>(`/api/open/waybills/${waybillNo}/exception-notify`, {
     method: "POST",
     body: JSON.stringify({ ticketId }),
   });
