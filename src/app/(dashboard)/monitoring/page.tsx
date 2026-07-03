@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function MonitoringPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async (p: number) => {
+    setLoading(true);
     try {
-      const res = await fetch("/api/monitoring");
+      const res = await fetch(`/api/monitoring?page=${p}&pageSize=${pageSize}`);
       const data = await res.json();
       setData(data);
     } catch (err) {
@@ -20,7 +19,14 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page, fetchData]);
+
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages || 1;
 
   if (loading) {
     return (
@@ -72,7 +78,7 @@ export default function MonitoringPage() {
       <div className="card">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900">接口调用日志</h2>
-          <button onClick={fetchData} className="text-sm text-[#0FC6C2] hover:underline">
+          <button onClick={() => fetchData(page)} className="text-sm text-[#0FC6C2] hover:underline">
             刷新
           </button>
         </div>
@@ -90,12 +96,12 @@ export default function MonitoringPage() {
               </tr>
             </thead>
             <tbody>
-              {data?.recentLogs?.length === 0 ? (
+              {data?.logs?.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-gray-400">暂无日志记录</td>
                 </tr>
               ) : (
-                data?.recentLogs?.map((log: any) => (
+                data?.logs?.map((log: any) => (
                   <tr key={log.id}>
                     <td className="font-mono text-xs text-gray-700">{log.apiName}</td>
                     <td className="font-mono text-xs text-gray-500 max-w-xs truncate" title={log.requestUrl}>
@@ -119,6 +125,31 @@ export default function MonitoringPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="p-4 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-sm text-gray-500">
+            共 {pagination?.total ?? 0} 条，第 {page} / {totalPages} 页
+          </span>
+          {totalPages > 1 && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                上一页
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                下一页
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

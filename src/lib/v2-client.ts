@@ -134,7 +134,7 @@ async function logApiCall(
 
 // 1. 校验运单是否存在 + 获取运单详情
 export async function validateAndGetWaybill(waybillNo: string) {
-  return v2RequestWithRetry<any>(`/api/waybills/${waybillNo}/validate`);
+  return v2RequestWithRetry<any>(`/api/open/waybills/${waybillNo}`);
 }
 
 // 2. 校验 SKU 是否归属于指定运单
