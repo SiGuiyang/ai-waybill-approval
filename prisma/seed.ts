@@ -1,8 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
 import { v4 as uuid } from "uuid";
 
-const prisma = new PrismaClient();
+// Use Neon adapter for seed (compatible with Neon serverless)
+const adapter = new PrismaNeon({
+  connectionString: process.env.DATABASE_URL!,
+});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 开始初始化数据...");
