@@ -22,7 +22,6 @@ export async function GET(req: NextRequest) {
   const waybillNo = searchParams.get("waybillNo");
   const approverId = searchParams.get("approverId");
   const source = searchParams.get("source");
-  const warehouseId = (session.user as any).warehouseId;
 
   const where: any = {};
   if (status) where.status = status;
@@ -30,7 +29,6 @@ export async function GET(req: NextRequest) {
   if (waybillNo) where.waybillNo = { contains: waybillNo };
   if (approverId) where.currentApproverId = approverId;
   if (source) where.source = source;
-  if (warehouseId) where.waybill = { warehouseId };
 
   try {
     const [tickets, total] = await Promise.all([
@@ -91,12 +89,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // 2. 归属校验：检查上报人是否有权限操作该运单
-    if (warehouseId && v2Result.data?.warehouseId !== warehouseId) {
-      return NextResponse.json({ error: "无权操作该运单，跨仓库操作不允许" }, { status: 403 });
-    }
-
-    // 3. 更新/创建本地快照
+    // 2. 更新/创建本地快照
     const v2Data = v2Result.data;
     let waybillSnapshot = await prisma.waybillSnapshot.findUnique({ where: { waybillNo } });
     if (waybillSnapshot) {
@@ -129,7 +122,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. 检查是否存在未关闭的同类型工单
+    // 3. 检查是否存在未关闭的同类型工单
     const existingTicket = await prisma.ticket.findFirst({
       where: {
         waybillNo,
@@ -145,13 +138,13 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
-    // 5. AI 辅助分类（可选）
+    // 4. AI 辅助分类（可选）
     let aiSuggestion = null;
     try {
       aiSuggestion = await aiClassifyException(exceptionDesc);
     } catch { /* AI 失败不阻塞 */ }
 
-    // 6. 创建工单
+    // 5. 创建工单
     const severity = determineSeverity(waybillSnapshot.declaredAmount);
     const ticketNo = `TK-${Date.now()}-${uuid().substring(0, 6)}`;
 

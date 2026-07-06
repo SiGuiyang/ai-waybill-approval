@@ -9,12 +9,6 @@ export async function GET() {
     return NextResponse.json({ error: "未登录" }, { status: 401 });
   }
 
-  const userId = (session.user as any).id;
-  const userRole = (session.user as any).role;
-  const warehouseId = (session.user as any).warehouseId;
-
-  // 构建仓库过滤条件（多租户）
-  const warehouseFilter = warehouseId ? { waybill: { warehouseId } } : {};
 
   try {
     const [
@@ -27,30 +21,27 @@ export async function GET() {
       recentTickets,
       recentLogs,
     ] = await Promise.all([
-      prisma.ticket.count({ where: warehouseFilter }),
-      prisma.ticket.count({ where: { ...warehouseFilter, status: "pending" } }),
+      prisma.ticket.count(),
+      prisma.ticket.count({ where: { status: "pending" } }),
       prisma.ticket.count({
         where: {
-          ...warehouseFilter,
           status: { in: ["level1_approving", "level2_approving"] },
         },
       }),
       prisma.ticket.count({
-        where: { ...warehouseFilter, isOverdue: true },
+        where: { isOverdue: true },
       }),
       prisma.ticket.count({
         where: {
-          ...warehouseFilter,
           completedAt: {
             gte: new Date(new Date().setHours(0, 0, 0, 0)),
           },
         },
       }),
       prisma.ticket.count({
-        where: { ...warehouseFilter, source: "scan_trigger", status: "pending" },
+        where: { source: "scan_trigger", status: "pending" },
       }),
       prisma.ticket.findMany({
-        where: warehouseFilter,
         orderBy: { createdAt: "desc" },
         take: 8,
         select: {
